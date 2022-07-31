@@ -33,6 +33,7 @@ const yAxis = d3.axisLeft().scale(y)
 //manipulacion de datos
 let data1
 let data2
+let data3 // años
 let countries = []
 let n_of_cups = []
 let yearformat = d3.timeParse("%Y")
@@ -41,14 +42,20 @@ let datafiltered
 
 //datos para grafica con paises y numero de copas.
 d3.csv("data.csv").then(data => {
-    data2 = d3.values(data).map(d => d.year = +d.year)
+    data3 = d3.values(data).map(d => d.year = +d.year)
        
     data = d3.nest()
             .key(d => d.winner)
             .rollup(d => d.length)
             .entries(data)
+            
  data1= data
-datafiltered = data1.filter(function(d){ return d.key != "" })
+ data1.sort(function(a, b) {
+    return d3.ascending(a.value, b.value)
+  })
+ data2= data1.map(d => d.value.length).sort()
+
+ datafiltered = data1.filter(function(d){ return d.key != "" })
 
 n_of_cups = datafiltered.map((d) => d['value'])
 countries = datafiltered.map((d) => d['key'])
@@ -59,7 +66,7 @@ countries = datafiltered.map((d) => d['key'])
        
 
 years = data2.filter(Boolean);
-
+//slider()
 //aplicar eje
 
 maxi = d3.max(n_of_cups)
@@ -76,7 +83,7 @@ function color(datafiltered) {
       }}
 
 // aplicar grafica
-elementGroup.selectAll('.bar').data(data)
+elementGroup.selectAll('.bar').data(datafiltered)
 .call(bars)
 
 function bars (group) {
@@ -139,7 +146,9 @@ function slider() {
         .width(580)  // ancho de nuestro slider
         .ticks(years.length)  
         .default(years[years.length -1])  // punto inicio de la marca
-        d3.select('#slider-button').on('click', function() { slider.slide_to(++pos); });
+        .on('onchange', val => {
+            d3.select('p#slider-time').text(d3.format('')(val));
+          });
             // conectar con la gráfica aquí
             d3.select('#slider').call(slider)
         ;
