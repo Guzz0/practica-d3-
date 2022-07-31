@@ -4,27 +4,30 @@
 const width = 800
 const height = 500
 const margin = {
-    top: 10,
+    top: 30,
     bottom: 40,
-    left: 40, 
+    left: 100, 
     right: 10
 }
+const plotHeight = height - margin.top - margin.bottom
+const plotWidth = width - margin.left - margin.right
+
 
 
 
 const svg = d3.select("#chart").append("svg").attr("width", width).attr("height", height)
 const elementGroup = svg.append("g").attr("id", "elementGroup").attr("transform", `translate(${margin.left}, ${margin.top})`)
 const axisGroup = svg.append("g").attr("id","axisGroup")
-const xAxisGroup = axisGroup.append("g").attr('transform', `translate(${margin.left},${height-margin.bottom})`)
-const yAxisGroup = axisGroup.append("g").attr('transform', `translate(${margin.left},${margin.top})`)
+const xAxisGroup = axisGroup.append("g").attr("id", "xAxisGroup").attr('transform', `translate(${margin.left},${height-margin.bottom})`)
+const yAxisGroup = axisGroup.append("g").attr("id", "yAxisGroup").attr('transform', `translate(${margin.left},${margin.top})`)
 
 //escala
 
-const x = d3.scaleLinear().range([0,width - margin.left - margin.right])
-const y = d3.scaleBand().range([height - margin.top -margin.bottom,0]).padding(0.1)
+let x = d3.scaleLinear().range([0,width - margin.left - margin.right])
+let y = d3.scaleBand().range([height - margin.top -margin.bottom,0]).padding(0.1)
 //eje
 
-const xAxis =d3.axisBottom().scale(x)
+const xAxis =d3.axisBottom().scale(x).ticks(5)
 const yAxis = d3.axisLeft().scale(y)
 
 //manipulacion de datos
@@ -38,45 +41,92 @@ let datafiltered
 
 //datos para grafica con paises y numero de copas.
 d3.csv("data.csv").then(data => {
+    data2 = d3.values(data).map(d => d.year = +d.year)
        
     data = d3.nest()
             .key(d => d.winner)
             .rollup(d => d.length)
             .entries(data)
- 
-    data1 = data
-    datafiltered = data1.filter(function(d){ return d.key != "" })
+ data1= data
+datafiltered = data1.filter(function(d){ return d.key != "" })
 
 n_of_cups = datafiltered.map((d) => d['value'])
 countries = datafiltered.map((d) => d['key'])
-})
+
 
 //datos para slider con años de cada copa
-d3.csv("data.csv").then(data => {
+
        
-data2 = d3.values(data).map(d => d.year = +d.year)
 
 years = data2.filter(Boolean);
 
 //aplicar eje
-})
-maxi = d3.max(n_of_cups)
 
+maxi = d3.max(n_of_cups)
+x.domain([0, maxi]).call(xAxis)
+y.domain(countries).call(yAxis)
 xAxisGroup.call(xAxis)
 yAxisGroup.call(yAxis)
 
+function color(datafiltered) {
+    if (d => d.value === maxi) {
+      return "max"
+      } else if (d=> d.value < maxi) {
+        return "#min";
+      }}
 
-x.domain([0, maxi])
-y.domain(countries)
+// aplicar grafica
+elementGroup.selectAll('.bar').data(data)
+.call(bars)
 
-
-elementGroup.selectAll("rect").data(datafiltered)
-.join("rect")
-      .attr("x", d => x(d.key))
-      .attr("y", d => y(d.value))
+function bars (group) {
+    group.enter().append("rect")
+      .attr('id', d => d.key)
+      .attr('class', 'bar')
+      .attr("x", 0)
+      .attr("y", d => y(d.key))
       .attr("height", y.bandwidth)
-      .attr("width",d => height - margin.bottom - margin.top - x(d.value))
+      .attr("width",d => x(d.value))
+      .attr("fill", (d) => {
+              if (d = d.value == 5) {
+                  return "#eb4703"
+              }
 
+              return "#69b3a2"
+          })
+      
+     
+}
+    
+  
+//titulos
+svg
+  .append("text")
+  .attr("x", width / 2)
+  .attr("y", (margin.top / 3) * 2)
+  .attr("text-anchor", "middle")
+  .text("Copas Mundiales")
+  .style("font-size", "18px")
+  .style("font-weight", "bold")
+  svg
+  .append("text")
+  .attr("x", margin.left -50 )
+  .attr("y", (margin.bottom / 3) * 2)
+  .attr("text-anchor", "middle")
+  .text('Paises')
+  .style("font-size", "18px")
+  .style("font-weight", "bold")
+
+svg.append("text")
+.attr("class","xAxis_label") 
+.attr("text-anchor", "end") 
+.attr("x", width/2) 
+.attr("y", height - 5)
+.text("Copas")
+.style("font-size", "18px")
+.style("font-weight", "bold")
+  
+})
 // CHART END
 
 // slider:
